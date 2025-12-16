@@ -25,18 +25,6 @@ if (!srcDir.exists() || !varsDir.exists()) {
 
 // Create classloader
 def gcl = new GroovyClassLoader(this.class.classLoader)
-
-println "-----------------------------"
-println "Pipeline execution started"
-println "-----------------------------"
-
-vars.createArtifact("demo-build")
-
-println "-----------------------------"
-println "Pipeline execution finished"
-println "-----------------------------"
-
-
 // Load src classes
 srcDir.eachFileRecurse { f ->
     if (f.name.endsWith(".groovy")) {
