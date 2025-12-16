@@ -62,3 +62,14 @@ vars.each { k, v -> println "[INFO] Loaded var: ${k}" }
 // vars.buildApp()
 
 println "[SUCCESS] main.groovy completed"
+
+println "-----------------------------"
+println "Pipeline execution started"
+println "-----------------------------"
+
+vars.createArtifact("demo-build")
+
+println "-----------------------------"
+println "Pipeline execution finished"
+println "-----------------------------"
+
