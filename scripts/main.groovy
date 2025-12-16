@@ -1,34 +1,53 @@
 import groovy.lang.GroovyClassLoader
 
-// Root directory
-def baseDir = new File(".").canonicalFile
+// Go up from scripts/main.groovy → repo root
+def projectRoot = new File(".").canonicalFile
 
-def srcDir  = new File(baseDir, "src")
-def varsDir = new File(baseDir, "vars")
+println "[INFO] Running from: ${projectRoot}"
+
+// Adjust if script is executed from /workspace
+if (new File(projectRoot, "scripts").exists()) {
+    projectRoot = projectRoot
+} else {
+    projectRoot = projectRoot.parentFile
+}
+
+def srcDir  = new File(projectRoot, "src")
+def varsDir = new File(projectRoot, "vars")
+
+println "[INFO] srcDir : ${srcDir}"
+println "[INFO] varsDir: ${varsDir}"
+
+// Basic validation
+if (!srcDir.exists() || !varsDir.exists()) {
+    throw new RuntimeException("src or vars directory missing")
+}
 
 // Create classloader
-GroovyClassLoader gcl = new GroovyClassLoader(this.class.classLoader)
+def gcl = new GroovyClassLoader(this.class.classLoader)
 
-// Load all src classes
-srcDir.eachFileRecurse { file ->
-    if (file.name.endsWith(".groovy")) {
-        gcl.parseClass(file)
+// Load src classes
+srcDir.eachFileRecurse { f ->
+    if (f.name.endsWith(".groovy")) {
+        gcl.parseClass(f)
     }
 }
 
-// Load vars as closures
+// Load vars
 def vars = [:]
-
-varsDir.eachFile { file ->
-    if (file.name.endsWith(".groovy")) {
-        def script = gcl.parseClass(file).newInstance()
-        vars[file.name - ".groovy"] = script
+varsDir.eachFile { f ->
+    if (f.name.endsWith(".groovy")) {
+        vars[f.name - ".groovy"] = gcl.parseClass(f).newInstance()
     }
 }
 
-// ======================
-// Use like Jenkins vars
-// ======================
+// =================
+// USE LIKE JENKINS
+// =================
+vars.each { k, v -> println "[INFO] Loaded var: ${k}" }
 
-vars.checkoutRepo("https://github.com/example/repo.git")
-vars.buildApp()
+// Example call (comment out if not needed)
+// vars.checkoutRepo("https://github.com/example/repo.git")
+// vars.buildApp()
+
+println "[SUCCESS] main.groovy completed"
