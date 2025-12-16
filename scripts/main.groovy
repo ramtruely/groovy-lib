@@ -1,63 +1,61 @@
 import groovy.lang.GroovyClassLoader
 
-// Go up from scripts/main.groovy → repo root
-def projectRoot = new File(".").canonicalFile
+println "[INFO] Starting pipeline orchestrator"
 
-println "[INFO] Running from: ${projectRoot}"
+def workspace = new File(".").canonicalPath
+println "[INFO] Workspace: ${workspace}"
 
-// Adjust if script is executed from /workspace
-if (new File(projectRoot, "scripts").exists()) {
-    projectRoot = projectRoot
-} else {
-    projectRoot = projectRoot.parentFile
-}
+def srcDir  = new File("src")
+def varsDir = new File("vars")
 
-def srcDir  = new File(projectRoot, "src")
-def varsDir = new File(projectRoot, "vars")
-
-println "[INFO] srcDir : ${srcDir}"
-println "[INFO] varsDir: ${varsDir}"
-
-// Basic validation
 if (!srcDir.exists() || !varsDir.exists()) {
-    throw new RuntimeException("src or vars directory missing")
+    throw new RuntimeException("src/ or vars/ directory missing")
 }
 
-// Create classloader
+/**
+ * 1. Create GroovyClassLoader
+ */
 def gcl = new GroovyClassLoader(this.class.classLoader)
-// Load src classes
-srcDir.eachFileRecurse { f ->
-    if (f.name.endsWith(".groovy")) {
-        gcl.parseClass(f)
+
+/**
+ * 2. Load all src classes FIRST
+ */
+srcDir.eachFileRecurse { file ->
+    if (file.name.endsWith(".groovy")) {
+        gcl.parseClass(file)
     }
 }
 
-// Load vars
+/**
+ * 3. Load all vars scripts
+ */
 def vars = [:]
-varsDir.eachFile { f ->
-    if (f.name.endsWith(".groovy")) {
-        vars[f.name - ".groovy"] = gcl.parseClass(f).newInstance()
+varsDir.eachFile { file ->
+    if (file.name.endsWith(".groovy")) {
+        def scriptClass = gcl.parseClass(file)
+        vars[file.name - ".groovy"] = scriptClass.newInstance()
     }
 }
 
-// =================
-// USE LIKE JENKINS
-// =================
-vars.each { k, v -> println "[INFO] Loaded var: ${k}" }
+println "[INFO] Loaded vars: ${vars.keySet()}"
 
-// Example call (comment out if not needed)
-// vars.checkoutRepo("https://github.com/example/repo.git")
-// vars.buildApp()
-
-println "[SUCCESS] main.groovy completed"
+/**
+ * 4. Pipeline execution (Jenkinsfile logic)
+ */
+import Stage
 
 println "-----------------------------"
 println "Pipeline execution started"
 println "-----------------------------"
 
-vars.createArtifact.createArtifact("demo-build")
+Stage.run("Build") {
+    vars.createArtifact.createArtifact("demo-build")
+}
+
+Stage.run("Deploy") {
+    vars.deployComponent.deploy("demo-build", "dev")
+}
 
 println "-----------------------------"
 println "Pipeline execution finished"
 println "-----------------------------"
-
