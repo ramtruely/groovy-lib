@@ -1,6 +1,6 @@
 def createArtifact(String name) {
     def workspace = new File(".").canonicalPath
-    def buildDir  = new File("build")
+    def buildDir = new File("build")
 
     if (!buildDir.exists()) {
         buildDir.mkdirs()
