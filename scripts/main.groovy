@@ -55,7 +55,7 @@ println "-----------------------------"
 println "Pipeline execution started"
 println "-----------------------------"
 
-vars.createArtifact("demo-build")
+vars.createArtifact.createArtifact("demo-build")
 
 println "-----------------------------"
 println "Pipeline execution finished"
